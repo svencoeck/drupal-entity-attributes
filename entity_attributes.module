@@ -1,0 +1,87 @@
+<?php
+
+/**
+ * Implements hook_entity_view().
+ */
+function entity_attributes_entity_view(
+    array &$build,
+    \Drupal\Core\Entity\EntityInterface $entity,
+    \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display,
+    $view_mode
+)
+{
+    $entityAttributesHelper = new \Drupal\entity_attributes\Helper\EntityAttributesHelper();
+    $entityAttributes = $entityAttributesHelper->getEntityAttributes($entity);
+
+    if (!empty($entityAttributes)) {
+        $build['#entity_attributes'] = $entityAttributes;
+    }
+}
+
+/**
+ * Implements hook_preprocess().
+ */
+function entity_attributes_preprocess(&$variables, $hook)
+{
+    $entityAttributes = [];
+
+    if (isset($variables['elements']['#entity_attributes'])) {
+        $entityAttributes = $variables['elements']['#entity_attributes'];
+    }
+
+    if (isset($variables['elements']['content']['#entity_attributes'])) {
+        $entityAttributes = $variables['elements']['content']['#entity_attributes'];
+    }
+
+    if (!empty($entityAttributes)) {
+        if (!isset($variables['attributes'])) {
+            $variables['attributes'] = [];
+        }
+        $variables['attributes'] = array_merge_recursive($variables['attributes'], $entityAttributes);
+    }
+}
+
+/**
+ * Implements hook_ds_pre_render_alter().
+ */
+function entity_attributes_ds_pre_render_alter(array &$layout_render_array, array $context, array &$variables)
+{
+    $entity = $context['entity'];
+
+    $entityAttributesHelper = new \Drupal\entity_attributes\Helper\EntityAttributesHelper();
+    $entityAttributes = $entityAttributesHelper->getEntityAttributes($entity);
+
+    if (!empty($entityAttributes)) {
+        $variables['attributes'] = array_merge_recursive($variables['attributes'], $entityAttributes);
+    }
+}
+
+function entity_attributes_preprocess_field__ds_field_expert(&$variables)
+{
+    $entity = $variables['element']['#object'];
+
+    $entityAttributesHelper = new \Drupal\entity_attributes\Helper\EntityAttributesHelper();
+    $entityAttributes = $entityAttributesHelper->getEntityAttributes($entity);
+
+    $attributeMapping = [
+        'lbw-at' => 'label_attributes',
+        'ow-at' => 'wrapper_attributes',
+        'fis-at' => 'field_wrapper_attributes',
+        'fi-at' => 'field_item_wrapper_attributes',
+    ];
+
+    foreach ($attributeMapping as $settingName => $attributeField) {
+        if (strpos($variables['settings'][$settingName], '{{entity_attributes}}') !== false) {
+            $variables['settings'][$settingName] = str_replace(
+                '{{entity_attributes}}',
+                '',
+                $variables['settings'][$settingName]
+            );
+
+            if (!empty($entityAttributes)) {
+                $variables[$attributeField]->mergeAttributes(new \Drupal\ds\DsAttribute($entityAttributes));
+            }
+        }
+    }
+
+}

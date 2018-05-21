@@ -1,0 +1,4 @@
+name: Entity Attributes
+description: Adds a field that allows you to change the HTML attributes of the parent entity.
+type: module
+core: 8.x

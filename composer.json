@@ -1,0 +1,16 @@
+{
+  "name": "drupal/entity_attributes",
+  "description": "Adds a field that allows you to change the HTML attributes of the parent entity.",
+  "type": "drupal-module",
+  "homepage": "",
+  "authors": [
+    {
+      "name": "Sven Coeck (coecks)",
+      "homepage": "",
+      "role": "Maintainer"
+    }
+  ],
+  "license": "GPL-2.0+",
+  "minimum-stability": "dev"
+}
+
