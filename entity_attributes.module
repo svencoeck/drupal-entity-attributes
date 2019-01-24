@@ -1,5 +1,14 @@
 <?php
 
+
+/**
+ * Render entity attributes to html.
+ */
+function entity_attributes_html(Drupal\Core\Entity\Entity $entity)
+{
+  $entityAttributesHelper = new \Drupal\entity_attributes\Helper\EntityAttributesHelper();
+}
+
 /**
  * Implements hook_entity_view().
  */
@@ -25,6 +34,8 @@ function entity_attributes_preprocess(&$variables, $hook)
 {
     $entityAttributes = [];
 
+    $entityAttributesHelper = new \Drupal\entity_attributes\Helper\EntityAttributesHelper();
+
     if (isset($variables['elements']['#entity_attributes'])) {
         $entityAttributes = $variables['elements']['#entity_attributes'];
     }
@@ -33,12 +44,17 @@ function entity_attributes_preprocess(&$variables, $hook)
         $entityAttributes = $variables['elements']['content']['#entity_attributes'];
     }
 
+    if ($hook == 'ds_entity_view' && isset($variables['content']['#entity'])) {
+      $entityAttributes = $entityAttributesHelper->getEntityAttributes($variables['content']['#entity']);
+    }
+
     if (!empty($entityAttributes)) {
         if (!isset($variables['attributes'])) {
             $variables['attributes'] = [];
         }
         $variables['attributes'] = array_merge_recursive($variables['attributes'], $entityAttributes);
     }
+
 }
 
 /**
@@ -84,4 +100,37 @@ function entity_attributes_preprocess_field__ds_field_expert(&$variables)
         }
     }
 
+}
+
+function entity_attributes_field_group_pre_render_alter(&$element, $group, $rendering_object)
+{
+
+  if (!isset($rendering_object['#entity'])) {
+    return null;
+  }
+
+  $entity = $rendering_object['#entity'];
+
+  $entityAttributesHelper = new \Drupal\entity_attributes\Helper\EntityAttributesHelper();
+  $entityAttributes = $entityAttributesHelper->getEntityAttributes($entity);
+
+  if ($group->format_type == 'html_element' && !empty($group->format_settings['attributes'])) {
+    if ($element['#attributes'] && strpos('{{entity_attributes}}', $group->format_settings['attributes']) !== false) {
+      $attributeArray = $entityAttributes;
+      $originalAttributes = $element['#attributes']->toArray();
+      $mergedAttributes = array_merge_recursive($attributeArray, $originalAttributes);
+
+      $element['#attributes'] = new \Drupal\Core\Template\Attribute($mergedAttributes);
+    }
+  }
+}
+
+/**
+ * Implements hook_editor_js_settings_alter()
+ * @param array $settings
+ */
+function sarco_site_editor_js_settings_alter(array &$settings) {
+  foreach ($settings['editor']['formats'] as $name => $value) {
+    $settings['editor']['formats'][$name]['editorSettings']['autoParagraph'] = FALSE;
+  }
 }

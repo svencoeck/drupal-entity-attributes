@@ -1,5 +1,4 @@
 <?php
-declare(strict_types=1);
 
 namespace Drupal\entity_attributes\Plugin\Field\FieldWidget;
 
@@ -60,9 +59,14 @@ class EntityAttributesDefaultFieldWidget extends WidgetBase
         ];
 
         if (!empty($attributeSets)) {
-            $element['entity_attributes']['sets'] = [
-                '#type' => 'select',
-                '#title' => t('Attribute sets'),
+            $element['entity_attributes']['sets_wrapper'] = [
+              '#type' => 'details',
+              '#title' => t('Attribute sets'),
+              '#open' => false,
+            ];
+
+            $element['entity_attributes']['sets_wrapper']['sets'] = [
+                '#type' => 'checkboxes',
                 '#options' => $attributeSets,
                 '#default_value' => $attributeValues['sets'],
                 '#multiple' => true,

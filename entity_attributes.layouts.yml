@@ -1,0 +1,10 @@
+entity_attributes:
+  label: Entity Attributes
+  category: Display Suite
+  class: '\Drupal\ds\Plugin\DsLayout'
+  type: partial
+  template: templates/entity-attributes
+  icon: images/entity-attributes.png
+  regions:
+    ds_content:
+      label: Content

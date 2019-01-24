@@ -1,9 +1,9 @@
 <?php
-declare(strict_types=1);
 
 namespace Drupal\entity_attributes\Helper;
 
 use Drupal\Core\Entity\Entity;
+use Drupal\Core\Template\Attribute;
 
 /**
  * Class EntityAttributesHelper
@@ -27,6 +27,7 @@ class EntityAttributesHelper
         $values = $this->emptyAttributes();
         $values = array_merge($values, (array)json_decode($json));
 
+
         return $values;
     }
 
@@ -34,7 +35,9 @@ class EntityAttributesHelper
     {
         $values = $this->emptyAttributes();
         $values['class'] = explode(" ", $item['class']);
-        $values['sets'] = isset($item['sets']) ? array_values((array)$item['sets']) : [];
+        $values['sets'] = isset($item['sets_wrapper']['sets'])
+          ? array_values((array)$item['sets_wrapper']['sets'])
+          : [];
         $values['id'] = $item['id'];
         $values['advanced'] = preg_split("/\r?\n/", $item['advanced']['advanced_attributes']);
 
@@ -74,7 +77,9 @@ class EntityAttributesHelper
 
         if (!empty($item['sets'])) {
             foreach ($item['sets'] as $set) {
-                $attributes = array_merge_recursive($this->getEntityAttributesBySet($set, $entity), $attributes);
+                if (!empty($set)) {
+                  $attributes = array_merge_recursive($this->getEntityAttributesBySet($set, $entity), $attributes);
+                }
             }
         }
 
@@ -107,8 +112,32 @@ class EntityAttributesHelper
         return array_filter($view_modes);
     }
 
+  /**
+   * Get all entity attributes fields associated with an entity.
+   *
+   * @param $entity
+   * @return array
+   */
+    public function getEntityAttributesFields($entity)
+    {
+      $fields = \Drupal::service('entity_field.manager')
+        ->getFieldDefinitions($entity->getEntityTypeId(), $entity->bundle());
+
+      return array_filter($fields, function($field) {
+        return $field->getType() == 'entity_attributes';
+      });
+    }
+
+  /**
+   * @param $entity
+   * @return array
+   */
     public function getEntityAttributes($entity)
     {
+        if (!$entity) {
+          return null;
+        }
+
         $fields = \Drupal::service('entity_field.manager')
             ->getFieldDefinitions($entity->getEntityTypeId(), $entity->bundle());
 
@@ -129,6 +158,17 @@ class EntityAttributesHelper
         return $attributes;
     }
 
+  /**
+   * @param $entity
+   * @return string
+   */
+    public function getEntityAttributesHtml($entity)
+    {
+      $entityAttributes = $this->getEntityAttributes($entity);
+      $attribute = new Attribute($entityAttributes);
+      return $attribute;
+    }
+
 
     public function getDefinedAttributeSets($entity)
     {
@@ -141,7 +181,7 @@ class EntityAttributesHelper
             }
         }
 
-        $theme = \Drupal::service('theme.manager')->getActiveTheme()->getName();
+        $theme = \Drupal::config('system.theme')->get('default');
         $function = $theme . '_entity_attributes_sets_info';
         if (function_exists($function)) {
             $attributeSets += $function($entity);
